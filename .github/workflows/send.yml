@@ -36,8 +36,19 @@ jobs:
       - run: python -m playwright install --with-deps chromium
       - name: Write protected configuration
         shell: bash
-        run: printf '%s' "$DOUYIN_CONFIG" > config.json
-      - name: Write multi-account configuration
+        run: printf "%s" "$DOUYIN_CONFIG" > config.json
+      - name: Run
         shell: bash
-        env:
-          COOKIE_1: ${{ secrets.DOUYIN_COOKIE_ACCOUNT1 }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then
+            python run.py --dry-run
+          else
+            python run.py
+          fi
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: douyin-failure-${{ github.run_id }}
+          path: artifacts/
+          retention-days: 3
